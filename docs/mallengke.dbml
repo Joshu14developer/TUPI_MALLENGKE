@@ -1,0 +1,402 @@
+// ============================================================================
+//  MALLENGKE · DATA MODEL  (schema version 15)
+// ============================================================================
+//  Target : dbdiagram.io  ->  https://dbdiagram.io/d/new
+//  Import : paste this whole file into the editor, or
+//           Diagram > Import > DBML, or save as `mallengke.dbml` and drop it in.
+//  Source : config/db.php (the declared source of truth)
+//
+//  CARDINALITY IN DBML
+//  DBML accepts exactly four relationship operators, and nothing else:
+//    `-`  one-to-one
+//    `<`  one-to-many        (the mirror of `>`; drawn identically)
+//    `>`  many-to-one
+//    `<>` many-to-many
+//
+//  DO NOT invent an operator for "optional". Some DBML parsers accept the
+//  v9 `>?` / `?>` notation, but the older parser still rejects it with
+//  `Expected " " but "?" found` — and because a parse error aborts the
+//  WHOLE file, that silently drops all 20 relationships and every
+//  cardinality with them. `o>`, `0>`, `<=` and friends are not DBML at
+//  all. So: plain `>` everywhere, and the nullable-ness is carried in the
+//  FK column's note (see each column: "nullable: ..."), which every
+//  parser renders on hover.
+//
+//  Every relationship also carries its real referential actions, so the
+//  ON DELETE rule survives the import as well.
+// ============================================================================
+
+// ---------------------------------------------------------------- accounts ---
+
+Table users {
+  id int [pk, increment, note: 'login account id']
+  username varchar(50) [not null, unique, note: 'sign-in handle']
+  email varchar(190) [not null, unique]
+  password varchar(255) [not null, note: 'bcrypt hash']
+  remember_token varchar(64) [note: 'nullable: no "remember me" cookie']
+  created_at datetime [not null, default: `CURRENT_TIMESTAMP`]
+
+  Note: 'Credentials only. Everything a market person *is* lives in `vendors`.'
+  indexes {
+    (remember_token) [name: 'idx_users_remember']
+  }
+}
+
+Table admin_users {
+  id int [pk, increment]
+  username varchar(60) [not null, unique]
+  email varchar(120) [not null, unique]
+  password_hash varchar(255) [not null]
+  full_name varchar(120) [not null]
+  role enum [not null, default: 'admin', note: "'superadmin' | 'admin' | 'moderator'"]
+  avatar_color varchar(20) [not null, default: '#059669']
+  avatar_path varchar(255) [note: 'relative path under assets/uploads/avatars']
+  last_login datetime
+  last_ip varchar(45)
+  is_active tinyint [not null, default: 1]
+  created_at datetime [not null, default: `CURRENT_TIMESTAMP`]
+  updated_at datetime [not null, default: `CURRENT_TIMESTAMP`]
+
+  Note: 'Market office staff. The `admin` side of every office decision.'
+  indexes {
+    (role) [name: 'idx_admin_role']
+    (is_active) [name: 'idx_admin_active']
+  }
+}
+
+// ------------------------------------------------------------------ people ---
+
+Table vendors {
+  id int [pk, increment]
+  user_id int [note: 'nullable: unapproved vendors have no login yet']
+  first_name varchar(80) [not null]
+  middle_name varchar(80)
+  last_name varchar(80) [not null]
+  birthdate date [not null]
+  gender enum [not null, note: "'Male' | 'Female' | 'Other'"]
+  civil_status enum [not null, note: "'Single' | 'Married' | 'Widowed' | 'Separated'"]
+  contact_number varchar(20) [not null]
+  email varchar(190)
+  avatar_path varchar(255) [note: 'relative path under assets/uploads/avatars']
+  address varchar(255) [not null]
+  business_name varchar(120)
+  stall_number varchar(30) [unique, note: 'nullable while unassigned; one vendor per stall']
+  market_section varchar(60) [not null]
+  product_type varchar(150) [not null]
+  years_in_business int [not null, default: 0]
+  id_type varchar(60) [not null]
+  id_number varchar(60) [not null]
+  emergency_name varchar(120) [not null]
+  emergency_relationship varchar(60) [not null]
+  emergency_contact varchar(20) [not null]
+  status enum [not null, default: 'Pending', note: "'Pending' | 'Approved' | 'Rejected' | 'Suspended'"]
+  access_blocked tinyint [not null, default: 0]
+  access_kind enum [not null, default: 'none', note: "'none' | 'suspended' | 'removed'"]
+  access_note varchar(500)
+  access_by varchar(120)
+  access_at datetime
+  remarks varchar(255)
+  qr_token varchar(64) [unique]
+  permit_status enum [not null, default: 'Pending', note: "'Valid' | 'Pending' | 'Expired' | 'Suspended'"]
+  permit_expiry date
+  payment_status enum [not null, default: 'Unpaid', note: "'Paid' | 'Partial' | 'Unpaid'"]
+  payment_due date
+  last_payment_date date
+  stall_status enum [not null, default: 'Occupied', note: "'Occupied' | 'Available'"]
+  created_at datetime [not null, default: `CURRENT_TIMESTAMP`]
+  updated_at datetime [not null, default: `CURRENT_TIMESTAMP`]
+
+  Note: 'The hub of the model. 1:N out to vendor messages, swaps, reports,\nstall applications and office threads.\nAppears TWICE in stall_swap_requests and vendor_reports\n(requester/target, reporter/reported).'
+  indexes {
+    (user_id) [name: 'idx_vendors_user']
+    (status) [name: 'idx_vendors_status']
+    (market_section, stall_number) [name: 'idx_vendors_section_stall']
+    (permit_status, permit_expiry) [name: 'idx_vendors_permit']
+    (payment_status, payment_due) [name: 'idx_vendors_payment']
+  }
+}
+
+Table customers {
+  id int [pk, increment]
+  first_name varchar(80) [not null]
+  last_name varchar(80) [not null]
+  email varchar(190) [not null, unique]
+  phone varchar(20)
+  address varchar(255)
+  avatar_path varchar(255) [note: 'relative path under assets/uploads/avatars']
+  username varchar(50) [not null, unique]
+  password varchar(255) [not null]
+  remember_token varchar(64)
+  created_at datetime [not null, default: `CURRENT_TIMESTAMP`]
+  last_login datetime
+
+  Note: 'Shoppers. Leaf entity — owns nothing, references nothing.'
+  indexes {
+    (remember_token) [name: 'idx_customers_remember']
+  }
+}
+
+// --------------------------------------------------- vendor <-> vendor chat ---
+
+Table vendor_conversations {
+  id int [pk, increment]
+  vendor_a_id int [not null, note: 'canonical pair: always the lower id']
+  vendor_b_id int [not null, note: 'canonical pair: always the higher id']
+  last_message_at datetime [not null, default: `CURRENT_TIMESTAMP`]
+  last_message_preview varchar(160)
+  unread_a int [not null, default: 0]
+  unread_b int [not null, default: 0]
+  created_at datetime [not null, default: `CURRENT_TIMESTAMP`]
+
+  Note: 'Resolves the M:N "vendors can message each other" into 1:1 threads.\nCHECK (vendor_a_id < vendor_b_id) makes UNIQUE(a,b) a real guarantee\nregardless of who opened the chat.'
+  indexes {
+    (vendor_a_id, vendor_b_id) [unique, name: 'uniq_vc_pair']
+    (vendor_a_id, last_message_at) [name: 'idx_vc_a']
+    (vendor_b_id, last_message_at) [name: 'idx_vc_b']
+  }
+}
+
+Table vendor_messages {
+  id int [pk, increment]
+  conversation_id int [not null]
+  sender_vendor_id int [not null]
+  body text [not null]
+  is_read tinyint [not null, default: 0]
+  created_at datetime [not null, default: `CURRENT_TIMESTAMP`]
+
+  Note: '1:N from vendor_conversations, and a second 1:N from vendors\n(the sender). Stalls swap messages travel through here.'
+  indexes {
+    (conversation_id, id) [name: 'idx_vm_conv']
+    (conversation_id, sender_vendor_id, is_read) [name: 'idx_vm_unread']
+  }
+}
+
+// ------------------------------------------------------------ communication ---
+
+Table announcements {
+  id int [pk, increment]
+  title varchar(180) [not null]
+  body text [not null]
+  category varchar(40) [not null, default: 'announcement']
+  audience enum [not null, default: 'all', note: "'all' | 'section'"]
+  section varchar(60)
+  is_pinned tinyint [not null, default: 0]
+  is_active tinyint [not null, default: 1]
+  published_at datetime [not null, default: `CURRENT_TIMESTAMP`]
+  expires_at datetime
+  recipient_count int [not null, default: 0]
+  read_count int [not null, default: 0]
+  sms_sent int [not null, default: 0]
+  sms_failed int [not null, default: 0]
+  sms_skipped int [not null, default: 0]
+  sms_sent_at datetime
+  created_by int [note: 'nullable: the office staff member who authored it; SET NULL if that account is removed']
+  created_by_name varchar(160) [not null, default: 'Market Office']
+  created_at datetime [not null, default: `CURRENT_TIMESTAMP`]
+  updated_at datetime [not null, default: `CURRENT_TIMESTAMP`]
+
+  Note: '1:N out to notifications — each per-recipient copy points back here,\nso deleting a notice takes its fan-out with it.'
+  indexes {
+    (is_active, is_pinned, published_at) [name: 'idx_ann_feed']
+    (is_active, expires_at) [name: 'idx_ann_expiry']
+    (audience, section) [name: 'idx_ann_audience']
+    (created_by) [name: 'idx_ann_author']
+  }
+}
+
+Table notifications {
+  id int [pk, increment]
+  sender_type enum [not null, default: 'system', note: "'admin' | 'vendor' | 'customer' | 'system'"]
+  sender_id int [note: 'POLYMORPHIC — sender_type says which table this id belongs to']
+  sender_name varchar(160) [not null, default: 'System']
+  recipient_type enum [not null, default: 'vendor', note: "'admin' | 'vendor' | 'customer'"]
+  recipient_id int [not null, default: 0, note: 'POLYMORPHIC — recipient_type says which table this id belongs to']
+  parent_id int [note: 'nullable: reply threading; CASCADE']
+  announcement_id int [note: 'nullable: set when this row is an announcement copy']
+  category varchar(40) [not null, default: 'general']
+  title varchar(180) [not null, default: '']
+  body text
+  link varchar(255)
+  is_read tinyint [not null, default: 0]
+  read_at datetime
+  created_at datetime [not null, default: `CURRENT_TIMESTAMP`]
+
+  Note: 'Self-referencing: parent_id gives the 1:N reply thread inside one inbox.'
+  indexes {
+    (recipient_type, recipient_id, is_read, id) [name: 'idx_notif_inbox']
+    (recipient_type, recipient_id, created_at, id) [name: 'idx_notif_feed']
+    (sender_type, sender_id) [name: 'idx_notif_sender']
+    (parent_id) [name: 'idx_notif_parent']
+    (announcement_id, is_read) [name: 'idx_notif_announcement']
+    (category) [name: 'idx_notif_category']
+  }
+}
+
+Table admin_activity_log {
+  id int [pk, increment]
+  admin_id int [not null]
+  action varchar(80) [not null]
+  target varchar(120)
+  details text
+  ip_address varchar(45)
+  created_at datetime [not null, default: `CURRENT_TIMESTAMP`]
+
+  Note: 'Audit trail. 1 admin -> 0..N entries.'
+  indexes {
+    (admin_id, created_at) [name: 'idx_log_admin']
+    (action, created_at) [name: 'idx_log_action']
+    (created_at) [name: 'idx_log_created']
+  }
+}
+
+// ------------------------------------------------------------------ market ---
+
+Table stall_swap_requests {
+  id int [pk, increment]
+  requester_vendor_id int [not null]
+  requester_stall varchar(30) [not null, default: '', note: 'SNAPSHOT at request time']
+  requester_section varchar(60)
+  target_vendor_id int [not null]
+  target_stall varchar(30) [not null, default: '', note: 'SNAPSHOT at request time']
+  target_section varchar(60)
+  reason varchar(500)
+  conversation_id int [note: 'nullable: the vendor thread this came from']
+  status enum [not null, default: 'Pending', note: "'Pending' | 'Approved' | 'Rejected' | 'Cancelled'"]
+  decided_by int [note: 'nullable: the office staff member who decided']
+  decided_by_name varchar(160)
+  decision_note varchar(500)
+  decided_at datetime
+  created_at datetime [not null, default: `CURRENT_TIMESTAMP`]
+  updated_at datetime [not null, default: `CURRENT_TIMESTAMP`]
+
+  Note: 'A vendors-to-vendors association, resolved as its own table.\nvendors 1 -- 0..N here TWICE (requester + target).\nCHECK (requester_vendor_id <> target_vendor_id).'
+  indexes {
+    (status, id) [name: 'idx_swap_queue']
+    (requester_vendor_id, status, id) [name: 'idx_swap_req']
+    (target_vendor_id, status, id) [name: 'idx_swap_tgt']
+    (requester_vendor_id, target_vendor_id, status) [name: 'idx_swap_pair']
+  }
+}
+
+Table stall_applications {
+  id int [pk, increment]
+  vendor_id int [not null]
+  requested_stall varchar(30) [note: 'NULL = no preference, takes whatever the office offers']
+  request_note varchar(500)
+  status enum [not null, default: 'Pending', note: "'Pending' | 'Assigned' | 'Declined'"]
+  assigned_stall varchar(30)
+  decision_note varchar(500)
+  decided_by int [note: 'nullable: the office staff member who decided; SET NULL if that account is removed']
+  decided_by_name varchar(120)
+  decided_at datetime
+  created_at datetime [not null, default: `CURRENT_TIMESTAMP`]
+
+  Note: 'A vendor asks for a stall; the office decides.\nApproval writes vendors.stall_number — this table is the request.\nidx_sa_vendor leads with vendor_id so InnoDB resolves fk_sa_vendor\nagainst it while also serving the per-vendor request lookup.'
+  indexes {
+    (vendor_id, status) [name: 'idx_sa_vendor']
+    (status, created_at) [name: 'idx_sa_status']
+    (decided_by) [name: 'idx_sa_decider']
+  }
+}
+
+Table vendor_reports {
+  id int [pk, increment]
+  reporter_vendor_id int [not null]
+  reported_vendor_id int [not null]
+  reason varchar(60) [not null]
+  details text [not null]
+  status enum [not null, default: 'Open', note: "'Open' | 'Reviewed' | 'Dismissed'"]
+  admin_note varchar(500)
+  reviewed_by int [note: 'nullable: the office staff member who reviewed']
+  reviewed_by_name varchar(120)
+  reviewed_at datetime
+  created_at datetime [not null, default: `CURRENT_TIMESTAMP`]
+
+  Note: 'A vendors-to-vendors association, resolved as its own table.\nvendors 1 -- 0..N here TWICE (reporter + reported).'
+  indexes {
+    (status, created_at) [name: 'idx_vr_status']
+    (reporter_vendor_id, status) [name: 'idx_vr_reporter']
+    (reported_vendor_id, status) [name: 'idx_vr_reported']
+  }
+}
+
+Table admin_messages {
+  id int [pk, increment]
+  vendor_id int [not null]
+  admin_id int [note: 'nullable: vendor side of the thread']
+  direction enum [not null, default: 'vendor', note: "'vendor' | 'admin'"]
+  body text [not null]
+  stall_requested varchar(30) [note: 'stall named in this message, if any']
+  is_read tinyint [not null, default: 0]
+  read_at datetime
+  created_at datetime [not null, default: `CURRENT_TIMESTAMP`]
+
+  Note: 'One thread per vendor holding BOTH directions, so the office\nhas no separate inbox table. The office is neither a vendor nor\na customer, which is why this exists.'
+  indexes {
+    (vendor_id, created_at) [name: 'idx_am_vendor']
+    (direction, is_read, created_at) [name: 'idx_am_inbox']
+  }
+}
+
+// -------------------------------------------------------------- internal -----
+
+Table schema_meta {
+  meta_key varchar(64) [pk]
+  meta_value text
+  updated_at datetime [not null, default: `CURRENT_TIMESTAMP`]
+
+  Note: 'Internal bookkeeping: schema version + last migration report.\nNot part of the domain model.'
+}
+
+// ============================================================================
+//  RELATIONSHIPS  (20 lines = 20 declared FOREIGN KEYs, verified against
+//  information_schema.referential_constraints on the live `mollengke` db)
+//
+//  The operator is always `>` (many-to-one), so every edge renders 1:N.
+//  Whether the PARENT side is "exactly one" or "zero or one" is a property
+//  of the FK column, not of the operator. Lines marked (0..1) are the ones
+//  MySQL reports as IS_NULLABLE = YES — a child row there can exist with no
+//  parent at all. Those are exactly the columns whose note says "nullable".
+//
+//  EVERY edge here is ON UPDATE CASCADE. A key that predates that rule can
+//  sit on RESTRICT, which is functionally identical (no parent id is ever
+//  reassigned) but is no longer the same relationship — so the migration
+//  compares the referential actions too and rebuilds the key when they
+//  differ, rather than trusting the name to mean the same thing forever.
+// ============================================================================
+
+// --- identity ---------------------------------------------------------------
+Ref fk_vendors_user:          vendors.user_id       >  users.id          [delete: set null, update: cascade]   // (0..1)
+
+// --- vendors talking to each other ------------------------------------------
+Ref fk_vc_a:                  vendor_conversations.vendor_a_id  >  vendors.id              [delete: cascade, update: cascade]
+Ref fk_vc_b:                  vendor_conversations.vendor_b_id  >  vendors.id              [delete: cascade, update: cascade]
+Ref fk_vm_conv:               vendor_messages.conversation_id   >  vendor_conversations.id [delete: cascade, update: cascade]
+Ref fk_vm_sender:             vendor_messages.sender_vendor_id >  vendors.id              [delete: cascade, update: cascade]
+
+// --- announcements fan out --------------------------------------------------
+Ref fk_ann_admin:            announcements.created_by       >  admin_users.id      [delete: set null, update: cascade]   // (0..1)
+Ref fk_notif_announcement:    notifications.announcement_id    >  announcements.id  [delete: cascade, update: cascade]   // (0..1)
+Ref fk_notif_parent:          notifications.parent_id          >  notifications.id  [delete: cascade, update: cascade]   // (0..1)
+
+// --- office audit -----------------------------------------------------------
+Ref fk_log_admin:             admin_activity_log.admin_id       >  admin_users.id    [delete: cascade, update: cascade]
+
+// --- stall swaps ------------------------------------------------------------
+Ref fk_swap_requester:        stall_swap_requests.requester_vendor_id  >  vendors.id               [delete: cascade, update: cascade]
+Ref fk_swap_target:           stall_swap_requests.target_vendor_id     >  vendors.id               [delete: cascade, update: cascade]
+Ref fk_swap_conv:             stall_swap_requests.conversation_id      >  vendor_conversations.id [delete: set null, update: cascade]   // (0..1)
+Ref fk_swap_admin:            stall_swap_requests.decided_by           >  admin_users.id           [delete: set null, update: cascade]   // (0..1)
+
+// --- stall applications -----------------------------------------------------
+Ref fk_sa_vendor:             stall_applications.vendor_id       >  vendors.id      [delete: cascade, update: cascade]
+Ref fk_sa_admin:              stall_applications.decided_by      >  admin_users.id  [delete: set null, update: cascade]   // (0..1)
+
+// --- vendor reports ---------------------------------------------------------
+Ref fk_vr_reporter:           vendor_reports.reporter_vendor_id  >  vendors.id      [delete: cascade, update: cascade]
+Ref fk_vr_reported:           vendor_reports.reported_vendor_id  >  vendors.id      [delete: cascade, update: cascade]
+Ref fk_vr_reviewer:           vendor_reports.reviewed_by         >  admin_users.id  [delete: set null, update: cascade]   // (0..1)
+
+// --- vendor <-> office thread -----------------------------------------------
+Ref fk_am_vendor:             admin_messages.vendor_id           >  vendors.id      [delete: cascade, update: cascade]
+Ref fk_am_admin:              admin_messages.admin_id            >  admin_users.id  [delete: set null, update: cascade]   // (0..1)

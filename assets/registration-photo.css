@@ -1,0 +1,243 @@
+/* ============================================================
+   REGISTRATION PROFILE PHOTO
+   Shared picker used by the customer and vendor sign-up forms.
+   The actual upload is a normal multipart form post, so the
+   field still works when JavaScript is unavailable.
+   ============================================================ */
+
+.reg-photo {
+    --rp-ink: #064e3b;
+    --rp-muted: #64748b;
+    --rp-bg: linear-gradient(135deg, #f0fdf4 0%, #ffffff 72%);
+    --rp-border: #bbf7d0;
+    --rp-avatar-bg: linear-gradient(135deg, #10b981, #047857);
+    --rp-button-bg: #047857;
+    --rp-button-ink: #ffffff;
+    --rp-chip-bg: #dcfce7;
+    --rp-chip-ink: #047857;
+    --rp-remove-bg: #ecfdf5;
+    --rp-remove-ink: #047857;
+    --rp-focus: rgba(16, 185, 129, 0.28);
+    position: relative;
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    margin: 0 0 20px;
+    padding: 16px;
+    border: 1.5px dashed var(--rp-border);
+    border-radius: 18px;
+    background: var(--rp-bg);
+    color: var(--rp-ink);
+    font-family: inherit;
+    box-sizing: border-box;
+}
+
+.reg-photo *,
+.reg-photo *::before,
+.reg-photo *::after {
+    box-sizing: border-box;
+}
+
+.reg-photo-preview {
+    position: relative;
+    flex: 0 0 auto;
+    width: 88px;
+    height: 88px;
+    border-radius: 24px;
+    overflow: hidden;
+    display: grid;
+    place-items: center;
+    background: var(--rp-avatar-bg);
+    color: #ffffff;
+    font-size: 28px;
+    cursor: pointer;
+    box-shadow: 0 10px 24px rgba(4, 120, 87, 0.22);
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.reg-photo-preview:hover,
+.reg-photo-preview:focus-visible {
+    transform: translateY(-2px);
+    box-shadow: 0 14px 30px rgba(4, 120, 87, 0.3);
+}
+
+.reg-photo-preview:focus-visible {
+    outline: 3px solid var(--rp-focus);
+    outline-offset: 3px;
+}
+
+.reg-photo-preview img {
+    width: 100%;
+    height: 100%;
+    display: block;
+    object-fit: cover;
+}
+
+.reg-photo-copy {
+    flex: 1;
+    min-width: 0;
+}
+
+.reg-photo-copy strong {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin: 0;
+    color: var(--rp-ink);
+    font-size: 14px;
+    font-weight: 700;
+    line-height: 1.3;
+}
+
+.reg-photo-copy strong span {
+    padding: 3px 8px;
+    border-radius: 999px;
+    background: var(--rp-chip-bg);
+    color: var(--rp-chip-ink);
+    font-size: 10px;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+}
+
+.reg-photo-copy > p {
+    margin: 4px 0 0;
+    color: var(--rp-muted);
+    font-size: 12.5px;
+    line-height: 1.5;
+}
+
+.reg-photo-actions {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-top: 10px;
+}
+
+.reg-photo-btn,
+.reg-photo-remove {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 7px;
+    min-height: 34px;
+    padding: 8px 13px;
+    border: 0;
+    border-radius: 10px;
+    font-family: inherit;
+    font-size: 12.5px;
+    font-weight: 700;
+    line-height: 1;
+    cursor: pointer;
+    transition: filter 0.18s ease, transform 0.18s ease;
+}
+
+.reg-photo-btn {
+    background: var(--rp-button-bg);
+    color: var(--rp-button-ink);
+}
+
+.reg-photo-btn:hover {
+    filter: brightness(1.08);
+    transform: translateY(-1px);
+}
+
+.reg-photo-remove {
+    background: var(--rp-remove-bg);
+    color: var(--rp-remove-ink);
+}
+
+.reg-photo-remove:hover {
+    filter: brightness(0.97);
+}
+
+.reg-photo-name {
+    max-width: 190px;
+    overflow: hidden;
+    color: var(--rp-muted);
+    font-size: 12px;
+    font-weight: 500;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.reg-photo-input {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    padding: 0;
+    margin: -1px;
+    overflow: hidden;
+    clip: rect(0 0 0 0);
+    white-space: nowrap;
+    border: 0;
+}
+
+.reg-photo .reg-photo-hint {
+    margin-top: 7px;
+    color: var(--rp-muted);
+    font-size: 11.5px;
+    line-height: 1.4;
+}
+
+.reg-photo .reg-photo-error {
+    margin-top: 6px;
+    color: #dc2626;
+    font-size: 12px;
+    font-weight: 600;
+    line-height: 1.4;
+}
+
+.reg-photo [hidden] {
+    display: none !important;
+}
+
+/* Dark / glass card variant used by the customer sign-up page. */
+.reg-photo--glass {
+    --rp-ink: #f8fafc;
+    --rp-muted: rgba(255, 255, 255, 0.72);
+    --rp-bg: rgba(255, 255, 255, 0.08);
+    --rp-border: rgba(167, 243, 208, 0.42);
+    --rp-button-bg: #fbbf24;
+    --rp-button-ink: #1e293b;
+    --rp-chip-bg: rgba(251, 191, 36, 0.16);
+    --rp-chip-ink: #fcd34d;
+    --rp-remove-bg: rgba(255, 255, 255, 0.1);
+    --rp-remove-ink: #f8fafc;
+    --rp-avatar-bg: linear-gradient(135deg, #34d399, #047857);
+    --rp-focus: rgba(52, 211, 153, 0.35);
+}
+
+@media (max-width: 520px) {
+    .reg-photo {
+        align-items: flex-start;
+        gap: 12px;
+        padding: 14px;
+    }
+
+    .reg-photo-preview {
+        width: 64px;
+        height: 64px;
+        border-radius: 18px;
+        font-size: 22px;
+    }
+
+    .reg-photo-name {
+        width: 100%;
+        max-width: none;
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .reg-photo-preview,
+    .reg-photo-btn {
+        transition: none;
+    }
+
+    .reg-photo-preview:hover,
+    .reg-photo-preview:focus-visible,
+    .reg-photo-btn:hover {
+        transform: none;
+    }
+}

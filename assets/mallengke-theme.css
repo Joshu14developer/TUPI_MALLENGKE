@@ -1,0 +1,854 @@
+/* ============================================================
+   MALLENGKE · SHARED UI THEME
+   ------------------------------------------------------------
+   One stylesheet for every public-facing auth screen, so the
+   vendor sign-in, the customer sign-in, the admin console sign-in
+   and the vendor status passport are literally the same design
+   instead of three hand-tuned copies.
+
+   The palette matches the signed-in dashboards (emerald + teal),
+   so nothing changes colour as a user moves between the sign-in
+   screen and the app behind it.
+   ============================================================ */
+
+:root {
+    /* Brand — Emerald */
+    --emerald-50:  #ecfdf5;
+    --emerald-100: #d1fae5;
+    --emerald-200: #a7f3d0;
+    --emerald-300: #6ee7b7;
+    --emerald-400: #34d399;
+    --emerald-500: #10b981;
+    --emerald-600: #059669;
+    --emerald-700: #047857;
+    --emerald-800: #065f46;
+    --emerald-900: #064e3b;
+    --emerald-950: #022c22;
+
+    /* Secondary — Teal */
+    --teal-50:  #f0fdfa;
+    --teal-100: #ccfbf1;
+    --teal-200: #99f6e4;
+    --teal-300: #5eead4;
+    --teal-400: #2dd4bf;
+    --teal-500: #14b8a6;
+    --teal-600: #0d9488;
+    --teal-700: #0f766e;
+    --teal-800: #115e59;
+    --teal-900: #134e4a;
+
+    /* Backwards-compatible green names, remapped onto emerald */
+    --green-50:  var(--emerald-50);
+    --green-100: var(--emerald-100);
+    --green-200: var(--emerald-200);
+    --green-300: var(--emerald-300);
+    --green-400: var(--emerald-400);
+    --green-500: var(--emerald-500);
+    --green-600: var(--emerald-600);
+    --green-700: var(--emerald-700);
+    --green-800: var(--emerald-800);
+    --green-900: var(--emerald-900);
+
+    /* Brand roles — 700 carries white text at 5.5:1 */
+    --brand-50:  var(--emerald-50);
+    --brand-100: var(--emerald-100);
+    --brand-200: var(--emerald-200);
+    --brand-300: var(--emerald-300);
+    --brand-400: var(--emerald-400);
+    --brand-500: var(--emerald-500);
+    --brand-600: var(--emerald-600);
+    --brand-700: var(--emerald-700);
+    --brand-800: var(--emerald-800);
+    --brand-900: var(--emerald-900);
+
+    /* Neutrals — cool slate, no green cast */
+    --ink:       #0f172a;
+    --ink-soft:  #475569;
+    --muted:     #64748b;
+    --line:      #e2e8f0;
+    --line-soft: #f1f5f9;
+    --bg:        #f7f9fb;
+
+    --brand:      var(--brand-700);
+    --brand-dark: var(--brand-800);
+
+    --sh-sm:   0 2px 8px rgba(2,44,34, .06);
+    --sh-md:   0 8px 22px rgba(2,44,34, .08);
+    --sh-xl:   0 40px 90px rgba(2,44,34, .35);
+    --glow:    0 10px 26px rgba(4,120,87, .38);
+    --glow-sm: 0 12px 26px rgba(4,120,87, .4);
+    --glow-teal: 0 10px 26px rgba(13,148,136, .38);
+
+    --ease-spring: cubic-bezier(.34, 1.56, .64, 1);
+    --ease-smooth: cubic-bezier(.4, 0, .2, 1);
+}
+
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+html, body { height: 100%; }
+
+/* ============================================================
+   PAGE BACKDROP
+   Deep emerald wash drifting into teal, with two slow floating
+   glows — the same palette the dashboards use for their sidebar.
+   ============================================================ */
+
+.auth-body {
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    background:
+        radial-gradient(circle at 12% 8%,  rgba(52,211,153, .34) 0%, transparent 42%),
+        radial-gradient(circle at 92% 92%, rgba(20,184,166, .28) 0%, transparent 42%),
+        linear-gradient(135deg, #022c22 0%, #064e3b 48%, #0f766e 100%);
+    color: var(--ink);
+    min-height: 100vh;
+    display: grid;
+    place-items: center;
+    padding: 24px;
+    -webkit-font-smoothing: antialiased;
+    overflow-x: hidden;
+}
+
+/* Used when a screen also needs its own layout (the passport). */
+.auth-body.flow { display: block; }
+
+.auth-body::before,
+.auth-body::after {
+    content: '';
+    position: fixed;
+    border-radius: 50%;
+    pointer-events: none;
+}
+.auth-body::before {
+    top: -120px; left: -120px;
+    width: 380px; height: 380px;
+    background: radial-gradient(circle, rgba(52,211,153, .18) 0%, transparent 70%);
+    animation: floatY 9s ease-in-out infinite;
+}
+.auth-body::after {
+    bottom: -140px; right: -140px;
+    width: 420px; height: 420px;
+    background: radial-gradient(circle, rgba(45,212,191, .18) 0%, transparent 70%);
+    animation: floatY 11s ease-in-out infinite reverse;
+}
+@keyframes floatY {
+    0%, 100% { transform: translateY(0) rotate(0); }
+    50%      { transform: translateY(-30px) rotate(8deg); }
+}
+
+/* ============================================================
+   LOGIN CARD
+   ============================================================ */
+
+.login-card {
+    position: relative;
+    width: 100%;
+    max-width: 440px;
+    background: #fff;
+    border-radius: 26px;
+    box-shadow: var(--sh-xl), 0 0 0 1.5px rgba(16,185,129, .15);
+    overflow: hidden;
+    z-index: 2;
+    animation: cardIn .55s var(--ease-spring);
+}
+.login-card.wide { max-width: 480px; }
+
+@keyframes cardIn {
+    from { opacity: 0; transform: translateY(30px) scale(.94); }
+    to   { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+/* the thin green ribbon along the top edge */
+.login-card::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    height: 6px;
+    background: linear-gradient(90deg, var(--green-500), var(--green-700), var(--green-500));
+}
+
+.login-head {
+    padding: 36px 34px 24px;
+    text-align: center;
+    background:
+        radial-gradient(circle at 50% 0%, rgba(16,185,129, .09) 0%, transparent 60%),
+        linear-gradient(180deg, #fbfcfd 0%, #ffffff 100%);
+    border-bottom: 1px solid var(--line-soft);
+}
+
+.login-logo {
+    width: 74px; height: 74px;
+    border-radius: 22px;
+    background: linear-gradient(135deg, var(--brand-600), var(--brand-800));
+    display: grid; place-items: center;
+    color: #fff;
+    font-size: 30px;
+    margin: 0 auto 18px;
+    box-shadow: 0 16px 34px rgba(16,185,129, .5);
+    transition: transform .4s var(--ease-spring);
+    position: relative;
+}
+/* slow dashed halo, echoes the rotating brand mark in the app */
+.login-logo::after {
+    content: '';
+    position: absolute;
+    inset: -6px;
+    border-radius: 26px;
+    border: 2px dashed rgba(16,185,129, .32);
+    animation: spinRing 22s linear infinite;
+}
+@keyframes spinRing { to { transform: rotate(360deg); } }
+.login-card:hover .login-logo { transform: rotate(-8deg) scale(1.06); }
+
+.login-head h1 {
+    font-size: 22px;
+    font-weight: 900;
+    color: var(--ink);
+    letter-spacing: -.5px;
+    margin-bottom: 5px;
+}
+.login-head .sub {
+    font-size: 12px;
+    color: var(--green-700);
+    letter-spacing: .18em;
+    text-transform: uppercase;
+    font-weight: 800;
+}
+.login-head p {
+    font-size: 13.5px;
+    color: var(--muted);
+    margin-top: 12px;
+    line-height: 1.55;
+}
+
+.login-body { padding: 26px 34px 32px; }
+.login-body.flush { padding-bottom: 8px; }
+
+/* ============================================================
+   FIELDS
+   ============================================================ */
+
+.field { display: flex; flex-direction: column; gap: 7px; margin-bottom: 14px; }
+.field label {
+    font-size: 12.5px;
+    font-weight: 800;
+    color: var(--ink-soft);
+    letter-spacing: .02em;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+.field label i { color: var(--brand); font-size: 11px; }
+
+.input-wrap { position: relative; }
+.input-wrap > i {
+    position: absolute;
+    left: 16px; top: 50%;
+    transform: translateY(-50%);
+    color: var(--muted);
+    font-size: 14px;
+    pointer-events: none;
+    transition: color .22s, transform .22s;
+}
+.input-wrap input {
+    width: 100%;
+    padding: 14px 46px 14px 44px;
+    border: 1.5px solid var(--line);
+    border-radius: 14px;
+    background: var(--bg);
+    color: var(--ink);
+    font-family: inherit;
+    font-size: 14.5px;
+    font-weight: 500;
+    outline: none;
+    transition: all .25s var(--ease-smooth);
+}
+.input-wrap input::placeholder { color: var(--muted); }
+.input-wrap input:focus {
+    background: #fff;
+    border-color: var(--green-400);
+    box-shadow: 0 0 0 5px rgba(16,185,129, .14);
+}
+.input-wrap input:-webkit-autofill {
+    -webkit-text-fill-color: var(--ink);
+    -webkit-box-shadow: 0 0 0 1000px var(--bg) inset;
+    caret-color: var(--ink);
+}
+.input-wrap:focus-within > i { color: var(--brand); transform: translateY(-50%) scale(1.15); }
+
+/* no toggle button → keep the right padding tight */
+.input-wrap.no-toggle input { padding-right: 16px; }
+
+.toggle-pw {
+    position: absolute;
+    right: 12px; top: 50%;
+    transform: translateY(-50%);
+    width: 34px; height: 34px;
+    border-radius: 10px;
+    border: none;
+    background: transparent;
+    cursor: pointer;
+    color: var(--muted);
+    display: grid;
+    place-items: center;
+    transition: all .22s;
+}
+.toggle-pw:hover { background: var(--green-100); color: var(--green-700); }
+
+/* ============================================================
+   REMEMBER ME / FORGOT
+   ============================================================ */
+
+.login-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    margin: 4px 0 20px;
+    font-size: 12.5px;
+    font-weight: 600;
+}
+.remember {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    color: var(--ink-soft);
+    cursor: pointer;
+    user-select: none;
+}
+.remember input {
+    appearance: none;
+    width: 18px; height: 18px;
+    border-radius: 5px;
+    border: 1.5px solid var(--line);
+    background: #fff;
+    cursor: pointer;
+    position: relative;
+    transition: all .22s;
+    flex-shrink: 0;
+}
+.remember input:checked {
+    background: linear-gradient(135deg, var(--green-500), var(--green-700));
+    border-color: transparent;
+}
+.remember input:checked::after {
+    content: '\f00c';
+    font-family: 'Font Awesome 6 Free';
+    font-weight: 900;
+    position: absolute;
+    inset: 0;
+    display: grid;
+    place-items: center;
+    color: #fff;
+    font-size: 10px;
+}
+.forgot { color: var(--green-700); text-decoration: none; font-weight: 700; }
+.forgot:hover { color: var(--green-800); text-decoration: underline; }
+
+/* ============================================================
+   BUTTONS
+   ============================================================ */
+
+.btn-login {
+    width: 100%;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 9px;
+    padding: 15px 22px;
+    border: none;
+    border-radius: 14px;
+    background: linear-gradient(135deg, var(--brand-600), var(--brand-800));
+    color: #fff;
+    font-family: inherit;
+    font-size: 14.5px;
+    font-weight: 800;
+    letter-spacing: .02em;
+    cursor: pointer;
+    box-shadow: var(--glow-sm);
+    transition: all .3s var(--ease-spring);
+    text-decoration: none;
+}
+.btn-login:hover { transform: translateY(-3px); box-shadow: 0 18px 34px rgba(16,185,129, .55); }
+.btn-login:active { transform: translateY(-1px) scale(.98); }
+.btn-login i { font-size: 14px; }
+
+/* secondary action (create an account, back to sign in…) */
+.link-btn {
+    width: 100%;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 9px;
+    padding: 14px;
+    background: #fff;
+    border: 1.5px solid var(--line);
+    border-radius: 14px;
+    color: var(--ink-soft);
+    font-family: inherit;
+    font-size: 14px;
+    font-weight: 800;
+    cursor: pointer;
+    text-decoration: none;
+    transition: all .25s var(--ease-smooth);
+}
+.link-btn i { color: var(--brand); }
+.link-btn:hover {
+    background: var(--green-50);
+    border-color: var(--green-300);
+    color: var(--green-700);
+    transform: translateY(-2px);
+}
+
+/* quiet tertiary action (scan a QR code) */
+.qr-btn {
+    width: 100%;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 9px;
+    padding: 14px;
+    background: linear-gradient(135deg, var(--brand-600), var(--brand-800));
+    border: none;
+    border-radius: 14px;
+    color: #fff;
+    font-family: inherit;
+    font-size: 14.5px;
+    font-weight: 800;
+    cursor: pointer;
+    box-shadow: 0 10px 22px rgba(16,185,129, .34);
+    transition: all .25s var(--ease-spring);
+}
+.qr-btn:hover { transform: translateY(-2px); box-shadow: 0 14px 30px rgba(16,185,129, .5); }
+.qr-btn i { font-size: 16px; }
+
+/* ============================================================
+   DIVIDER + HINTS
+   ============================================================ */
+
+.divider {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin: 24px 0 16px;
+    color: var(--muted);
+    font-size: 11px;
+    font-weight: 800;
+    text-transform: uppercase;
+    letter-spacing: .12em;
+}
+.divider::before,
+.divider::after {
+    content: '';
+    flex: 1;
+    height: 1px;
+    background: var(--line);
+}
+
+.hint {
+    text-align: center;
+    font-size: 12.5px;
+    color: var(--muted);
+    margin-top: 14px;
+    line-height: 1.6;
+}
+.hint i { color: var(--brand); margin-right: 4px; }
+.hint a { color: var(--green-700); font-weight: 700; text-decoration: none; }
+.hint a:hover { text-decoration: underline; }
+
+.demo-credentials {
+    margin-top: 22px;
+    padding-top: 16px;
+    border-top: 1px solid var(--line-soft);
+    text-align: center;
+    font-size: 12px;
+    color: var(--muted);
+}
+.demo-credentials strong {
+    color: var(--green-700);
+    background: var(--green-50);
+    padding: 2px 9px;
+    border-radius: 6px;
+    font-weight: 800;
+}
+
+/* ============================================================
+   ALERTS
+   ============================================================ */
+
+.alert {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 12px 16px;
+    border-radius: 12px;
+    background: #fef2f2;
+    border: 1.5px solid #fecaca;
+    color: #991b1b;
+    font-size: 13px;
+    font-weight: 600;
+    margin-bottom: 18px;
+    animation: shake .5s;
+}
+.alert i { font-size: 15px; color: #dc2626; }
+.alert.ok {
+    background: var(--green-50);
+    border-color: var(--green-200);
+    color: var(--green-800);
+}
+.alert.ok i { color: var(--green-600); }
+@keyframes shake {
+    0%, 100% { transform: translateX(0); }
+    20% { transform: translateX(-6px); }
+    40% { transform: translateX(6px); }
+    60% { transform: translateX(-4px); }
+    80% { transform: translateX(4px); }
+}
+
+/* ============================================================
+   CARD FOOTER
+   ============================================================ */
+
+.login-foot {
+    padding: 18px 34px 26px;
+    border-top: 1px solid var(--line-soft);
+    background: linear-gradient(180deg, #ffffff, #fbfcfd);
+    text-align: center;
+}
+.login-foot p { font-size: 11.5px; color: var(--muted); line-height: 1.6; }
+.login-foot p i { color: var(--brand); }
+.login-foot a { color: var(--green-700); font-weight: 700; text-decoration: none; }
+.login-foot a:hover { text-decoration: underline; }
+
+/* ============================================================
+   QR SCANNER PANEL  (vendor sign-in)
+   ============================================================ */
+
+.qr-panel { display: none; }
+.qr-panel.active { display: block; }
+
+.qr-back {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 9px 15px;
+    margin-bottom: 16px;
+    background: var(--bg);
+    border: 1.5px solid var(--line);
+    border-radius: 10px;
+    color: var(--ink-soft);
+    font-family: inherit;
+    font-size: 13px;
+    font-weight: 700;
+    cursor: pointer;
+    transition: all .2s var(--ease-smooth);
+}
+.qr-back:hover { background: var(--green-50); border-color: var(--green-300); color: var(--green-700); }
+
+.qr-title {
+    text-align: center;
+    font-size: 15px;
+    font-weight: 800;
+    color: var(--ink);
+    margin-bottom: 6px;
+}
+.qr-sub {
+    text-align: center;
+    font-size: 12.5px;
+    color: var(--muted);
+    margin-bottom: 16px;
+}
+
+#qr-reader {
+    width: 100%;
+    border-radius: 16px;
+    overflow: hidden;
+    background: #022c22;
+    min-height: 240px;
+    border: 1.5px solid var(--line);
+}
+#qr-reader video {
+    width: 100% !important;
+    height: auto !important;
+    display: block;
+    border-radius: 16px;
+}
+
+/* html5-qrcode's own chrome, recoloured to the theme */
+#qr-reader__dashboard_section_csr button {
+    background: linear-gradient(135deg, var(--green-500), var(--green-700)) !important;
+    color: #fff !important;
+    border: none !important;
+    padding: 8px 14px !important;
+    border-radius: 8px !important;
+    font-weight: 700 !important;
+    cursor: pointer !important;
+    margin: 6px 4px 0 !important;
+}
+#qr-reader img[alt="Info icon"] { display: none !important; }
+#qr-reader__dashboard_section_swaplink { display: none !important; }
+
+.qr-status {
+    text-align: center;
+    color: var(--muted);
+    font-size: 13px;
+    margin-top: 14px;
+    min-height: 20px;
+}
+.qr-status.ok  { color: var(--green-600); font-weight: 700; }
+.qr-status.err { color: #dc2626; font-weight: 700; }
+
+/* ============================================================
+   VENDOR PASSPORT
+   ============================================================ */
+
+.passport-page { padding: 34px 20px 60px; }
+
+.passport-header {
+    max-width: 720px;
+    margin: 0 auto 22px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 16px;
+    flex-wrap: wrap;
+}
+.brand { display: flex; align-items: center; gap: 14px; }
+.brand-icon {
+    width: 50px; height: 50px;
+    border-radius: 14px;
+    background: linear-gradient(135deg, var(--brand-600), var(--brand-800));
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #fff;
+    font-size: 20px;
+    box-shadow: 0 6px 16px rgba(16,185,129, .35);
+}
+.brand-text h1 { font-size: 19px; font-weight: 800; color: #fff; letter-spacing: -.3px; }
+.brand-text p  { font-size: 12.5px; color: rgba(255, 255, 255, .7); margin-top: 2px; }
+
+.badge-verified {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 9px 16px;
+    border-radius: 999px;
+    font-size: 13px;
+    font-weight: 700;
+    background: var(--green-100);
+    color: var(--green-800);
+    border: 1px solid var(--green-200);
+}
+.badge-verified i { color: var(--green-600); }
+
+.passport {
+    max-width: 720px;
+    margin: 0 auto;
+    background: #fff;
+    border-radius: 22px;
+    box-shadow: 0 18px 46px rgba(2,44,34, .3);
+    overflow: hidden;
+}
+
+/* green header band, in place of the old cream stripe */
+.passport-top {
+    background:
+        radial-gradient(circle at 20% 0%, rgba(52,211,153, .22) 0%, transparent 55%),
+        linear-gradient(135deg, #0a5c4a 0%, #065f46 100%);
+    padding: 26px 30px;
+    border-bottom: 1px solid var(--green-200);
+    display: grid;
+    grid-template-columns: auto 1fr auto;
+    gap: 20px;
+    align-items: center;
+}
+.avatar {
+    width: 74px; height: 74px;
+    border-radius: 18px;
+    background: linear-gradient(135deg, var(--brand-600), var(--brand-800));
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 26px;
+    font-weight: 800;
+    color: #fff;
+    box-shadow: 0 8px 20px rgba(4,120,87, .45);
+    letter-spacing: 1px;
+}
+.passport-top .info h2 {
+    font-size: 20px;
+    font-weight: 800;
+    color: #fff;
+    letter-spacing: -.3px;
+    margin-bottom: 3px;
+}
+.passport-top .info .ref {
+    font-size: 12.5px;
+    font-weight: 800;
+    color: var(--green-300);
+    letter-spacing: .08em;
+}
+.passport-top .info .business {
+    font-size: 13px;
+    color: rgba(255, 255, 255, .78);
+    margin-top: 3px;
+}
+.passport-top .info .business i { margin-right: 4px; color: var(--green-300); }
+
+/* the "verified" roundel */
+.stamp {
+    width: 66px; height: 66px;
+    border: 2.5px dashed var(--green-300);
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 9px;
+    font-weight: 800;
+    color: var(--green-300);
+    text-align: center;
+    line-height: 1.15;
+    letter-spacing: .04em;
+    transform: rotate(-8deg);
+    background: rgba(255, 255, 255, .08);
+}
+
+.passport-body {
+    padding: 26px 30px 30px;
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 20px;
+}
+
+.p-section {
+    background: var(--bg);
+    border: 1px solid var(--line);
+    border-radius: 14px;
+    padding: 18px 18px 12px;
+}
+.p-section.full { grid-column: 1 / -1; }
+
+.p-section h3 {
+    display: flex;
+    align-items: center;
+    gap: 9px;
+    font-size: 12px;
+    font-weight: 800;
+    text-transform: uppercase;
+    letter-spacing: .08em;
+    color: var(--green-700);
+    margin-bottom: 14px;
+    padding-bottom: 10px;
+    border-bottom: 1px solid var(--line);
+}
+.p-section h3 i { font-size: 13px; }
+
+.p-row {
+    display: flex;
+    justify-content: space-between;
+    gap: 12px;
+    padding: 7px 0;
+    font-size: 14px;
+    border-bottom: 1px dashed var(--line);
+}
+.p-row:last-child { border-bottom: none; }
+.p-row .label  { color: var(--muted); font-weight: 500; font-size: 13px; flex-shrink: 0; }
+.p-row .value { color: var(--ink); font-weight: 700; text-align: right; }
+
+/* status pills — semantics unchanged, only the neutrals went green */
+.badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    padding: 4px 11px;
+    border-radius: 999px;
+    font-size: 11px;
+    font-weight: 800;
+    letter-spacing: .04em;
+    text-transform: uppercase;
+}
+.badge-valid,
+.badge-approved,
+.badge-paid {
+    background: var(--green-100);
+    color: var(--green-800);
+    border: 1px solid var(--green-200);
+}
+.badge-pending,
+.badge-partial {
+    background: #fef3c7;
+    color: #92400e;
+    border: 1px solid #fde68a;
+}
+.badge-expired,
+.badge-unpaid,
+.badge-rejected,
+.badge-suspended {
+    background: #fee2e2;
+    color: #991b1b;
+    border: 1px solid #fecaca;
+}
+
+.deadline-note {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-top: 8px;
+    padding: 9px 12px;
+    border-radius: 9px;
+    font-size: 12.5px;
+    font-weight: 600;
+}
+.deadline-note.warn   { background: #fffbeb; color: #92400e; border: 1px solid #fde68a; }
+.deadline-note.danger { background: #fef2f2; color: #991b1b; border: 1px solid #fecaca; }
+.deadline-note.ok     { background: var(--green-50); color: var(--green-800); border: 1px solid var(--green-200); }
+
+.passport-footer {
+    padding: 16px 30px;
+    background: var(--bg);
+    border-top: 1px solid var(--line);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 12px;
+    flex-wrap: wrap;
+    font-size: 12.5px;
+    color: var(--muted);
+}
+.passport-footer strong { color: var(--ink); }
+.passport-footer i { color: var(--green-600); margin-right: 4px; }
+
+.passport-remarks {
+    font-size: 14px;
+    color: var(--ink-soft);
+    line-height: 1.6;
+}
+
+/* ============================================================
+   RESPONSIVE
+   ============================================================ */
+
+@media (max-width: 520px) {
+    .login-head  { padding: 28px 22px 20px; }
+    .login-body  { padding: 22px 22px 26px; }
+    .login-foot  { padding: 16px 22px 22px; }
+    .login-head h1 { font-size: 19px; }
+    .login-logo  { width: 64px; height: 64px; font-size: 26px; border-radius: 19px; }
+}
+
+@media (max-width: 640px) {
+    .passport-page   { padding: 22px 14px 40px; }
+    .passport-top    { grid-template-columns: 1fr; text-align: center; gap: 14px; padding: 22px; }
+    .avatar, .stamp { margin: 0 auto; }
+    .passport-body   { grid-template-columns: 1fr; padding: 20px; }
+    .passport-header { flex-direction: column; align-items: stretch; text-align: center; }
+    .brand { justify-content: center; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    *, *::before, *::after {
+        animation-duration: .01ms !important;
+        animation-iteration-count: 1 !important;
+        transition-duration: .01ms !important;
+    }
+}
